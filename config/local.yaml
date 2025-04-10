@@ -1,1 +1,4 @@
 env: 'local'
+grpc:
+  port: 6005
+  timeout: 1h

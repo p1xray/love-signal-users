@@ -2,9 +2,12 @@ package main
 
 import (
 	"log/slog"
+	"love-signal-users/internal/app"
 	"love-signal-users/internal/config"
 	"love-signal-users/internal/lib/logger/handlers/slogpretty"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -19,6 +22,21 @@ func main() {
 	log := setupLogger(cfg.Env)
 
 	log.Info("starting application", slog.Any("config", cfg))
+
+	application := app.New(log, cfg.GRPC.Port)
+
+	go func() {
+		application.GRPCServer.MustRun()
+	}()
+
+	// Graceful shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	<-stop
+
+	application.GRPCServer.Stop()
+	log.Info("application stopped")
 }
 
 func setupLogger(env string) *slog.Logger {
