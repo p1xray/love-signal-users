@@ -4,6 +4,6 @@ tasks:
   dev:
     aliases:
       - dev
-    desc: 'run users app'
+    desc: 'run users app with local config'
     cmds:
-      - go run ./cmd/users
+      - go run ./cmd/users --config=./config/local.yaml

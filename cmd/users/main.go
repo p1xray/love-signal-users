@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/p1xray/love-signal-users/internal/config"
+)
 
 func main() {
-	fmt.Println("Hello from users service!")
+	cfg := config.MustLoad()
+
+	fmt.Printf("config: %v", cfg)
 }
