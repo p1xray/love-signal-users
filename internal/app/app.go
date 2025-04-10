@@ -3,6 +3,7 @@ package app
 import (
 	"log/slog"
 	grpcapp "love-signal-users/internal/app/grpc"
+	"love-signal-users/internal/service"
 )
 
 // App is an application.
@@ -15,7 +16,9 @@ func New(
 	log *slog.Logger,
 	grpcPort int,
 ) *App {
-	grpcApp := grpcapp.New(log, grpcPort)
+	usersService := service.New(log)
+
+	grpcApp := grpcapp.New(log, grpcPort, usersService)
 
 	return &App{
 		GRPCServer: grpcApp,
