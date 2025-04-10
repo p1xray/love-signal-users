@@ -1,0 +1,9 @@
+version: '3'
+
+tasks:
+  dev:
+    aliases:
+      - dev
+    desc: 'run users app'
+    cmds:
+      - go run ./cmd/users
