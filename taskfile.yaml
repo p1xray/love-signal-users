@@ -7,3 +7,10 @@ tasks:
     desc: 'run users app with local config'
     cmds:
       - go run ./cmd/users --config=./config/local.yaml
+
+  migrate:
+    aliases:
+      - migrate
+    desc: 'up migrations'
+    cmds:
+      - go run ./cmd/migrator --storage-path=./storage/users.db -migrations-path=./migrations

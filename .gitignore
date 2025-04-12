@@ -25,6 +25,9 @@ go.work.sum
 # env file
 .env
 
+# sqlite storage files
+storage/*
+
 ### VisualStudioCode ###
 .vscode/*
 
