@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	grpcapp "love-signal-users/internal/app/grpc"
 	"love-signal-users/internal/service"
+	"love-signal-users/internal/storage/sqlite"
 )
 
 // App is an application.
@@ -15,8 +16,14 @@ type App struct {
 func New(
 	log *slog.Logger,
 	grpcPort int,
+	storagePath string,
 ) *App {
-	usersService := service.New(log)
+	storage, err := sqlite.New(storagePath)
+	if err != nil {
+		panic(err)
+	}
+
+	usersService := service.New(log, storage)
 
 	grpcApp := grpcapp.New(log, grpcPort, usersService)
 

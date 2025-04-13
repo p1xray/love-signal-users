@@ -10,8 +10,9 @@ import (
 
 // Config is the project configuration.
 type Config struct {
-	Env  string     `yaml:"env" env-default:"local"`
-	GRPC GRPCConfig `yaml:"grpc" env-required:"true"`
+	Env         string     `yaml:"env" env-default:"local"`
+	StoragePath string     `yaml:"storage_path" env-required:"true"`
+	GRPC        GRPCConfig `yaml:"grpc" env-required:"true"`
 }
 
 // GRPCConfig is the gRPC server configuration.

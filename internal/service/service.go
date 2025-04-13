@@ -6,31 +6,19 @@ import (
 	"log/slog"
 	"love-signal-users/internal/dto"
 	"love-signal-users/internal/lib/logger/sl"
+	"love-signal-users/internal/storage"
 )
 
 type UsersService struct {
 	log     *slog.Logger
-	storage UserStorage
-}
-
-type UserStorage interface {
-	// UserInfoByExternalId returns information about a user by their external identifier.
-	UserInfoByExternalId(
-		ctx context.Context,
-		userExternalId int64,
-	) (*dto.UserInfo, error)
-
-	// UserProfileCard returns the user profile card.
-	UserProfileCard(
-		ctx context.Context,
-		userId int64,
-	) (*dto.UserProfileCard, error)
+	storage storage.UserStorage
 }
 
 // New creates a new user service.
-func New(log *slog.Logger) *UsersService {
+func New(log *slog.Logger, storage storage.UserStorage) *UsersService {
 	return &UsersService{
-		log: log,
+		log:     log,
+		storage: storage,
 	}
 }
 

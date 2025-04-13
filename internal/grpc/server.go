@@ -72,11 +72,21 @@ func (s *serverAPI) UserProfileCard(
 		return nil, internalError("failed to get user profile card")
 	}
 
+	var dateOfBirthPb *timestamppb.Timestamp
+	if card.DateOfBirth != nil {
+		dateOfBirthPb = timestamppb.New(*card.DateOfBirth)
+	}
+
+	genderPb := userspb.Gender(0)
+	if card.Gender != nil {
+		genderPb = userspb.Gender(*card.Gender)
+	}
+
 	cardResponse := &userspb.UserProfileCardResponse{
 		Id:          card.Id,
 		Name:        card.Name,
-		DateOfBirth: timestamppb.New(card.DateOfBirth),
-		Gender:      userspb.Gender(card.Gender),
+		DateOfBirth: dateOfBirthPb,
+		Gender:      genderPb,
 	}
 
 	return cardResponse, nil
