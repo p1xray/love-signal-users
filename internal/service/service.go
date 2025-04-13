@@ -65,3 +65,25 @@ func (us *UsersService) UserProfileCard(
 
 	return card, nil
 }
+
+// FollowedUsers returns a list of users that the given user is followed to.
+func (us *UsersService) FollowedUsers(
+	ctx context.Context,
+	userId int64,
+) ([]*dto.FollowedUser, error) {
+	const op = "service.FollowedUsers"
+
+	log := us.log.With(
+		slog.String("op", op),
+		slog.Int64("user id", userId),
+	)
+
+	followedUsers, err := us.storage.FollowedUsersByUserId(ctx, userId)
+	if err != nil {
+		log.Error("failed to get followed users by user id", sl.Err(err))
+
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return followedUsers, nil
+}

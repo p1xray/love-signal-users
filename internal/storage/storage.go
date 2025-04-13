@@ -22,4 +22,10 @@ type UserStorage interface {
 		ctx context.Context,
 		userId int64,
 	) (*dto.UserProfileCard, error)
+
+	// FollowedUsersByUserId returns a list of users that the given user is followed to.
+	FollowedUsersByUserId(
+		ctx context.Context,
+		userId int64,
+	) ([]*dto.FollowedUser, error)
 }

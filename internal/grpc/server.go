@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
@@ -28,6 +29,12 @@ type UsersService interface {
 		ctx context.Context,
 		userId int64,
 	) (*dto.UserProfileCard, error)
+
+	// FollowedUsers returns a list of users that the given user is followed to.
+	FollowedUsers(
+		ctx context.Context,
+		userId int64,
+	) ([]*dto.FollowedUser, error)
 }
 
 type serverAPI struct {
@@ -92,6 +99,44 @@ func (s *serverAPI) UserProfileCard(
 	return cardResponse, nil
 }
 
+// FollowedUsers returns a list of users that the given user is followed to.
+func (s *serverAPI) FollowedUsers(
+	ctx context.Context,
+	req *userspb.FollowedUsersRequest,
+) (*userspb.FollowedUsersResponse, error) {
+	if err := validateFollowedUsersRequest(req); err != nil {
+		return nil, err
+	}
+
+	followedUsers, err := s.users.FollowedUsers(ctx, req.GetUserId())
+	if err != nil {
+		return nil, internalError("failed to get followed users")
+	}
+
+	followedUsersPb := make([]*userspb.FollowedUser, 0)
+	for _, fu := range followedUsers {
+		var avatarFileKeyPb *wrapperspb.StringValue
+		if fu.AvatarFileKey == nil {
+			avatarFileKeyPb = wrapperspb.String(*fu.AvatarFileKey)
+		}
+
+		followedUserPb := &userspb.FollowedUser{
+			FollowLinkId:     fu.FollowLinkId,
+			SendedLikesCount: fu.SendedLikesCount,
+			UserId:           fu.UserId,
+			Name:             fu.Name,
+			AvatarFileKey:    avatarFileKeyPb,
+		}
+		followedUsersPb = append(followedUsersPb, followedUserPb)
+	}
+
+	followedUsersResponse := &userspb.FollowedUsersResponse{
+		Users: followedUsersPb,
+	}
+
+	return followedUsersResponse, nil
+}
+
 func validateUserInfoRequest(req *userspb.UserInfoRequest) error {
 	if req.GetUserExternalId() == emptyValue {
 		return invalidArgumentError("user_external_id is empty")
@@ -102,6 +147,14 @@ func validateUserInfoRequest(req *userspb.UserInfoRequest) error {
 
 func validateUserProfileCardRequest(req *userspb.UserProfileCardRequest) error {
 	if req.GetId() == emptyValue {
+		return invalidArgumentError("id is empty")
+	}
+
+	return nil
+}
+
+func validateFollowedUsersRequest(req *userspb.FollowedUsersRequest) error {
+	if req.GetUserId() == emptyValue {
 		return invalidArgumentError("id is empty")
 	}
 

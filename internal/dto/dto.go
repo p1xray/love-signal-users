@@ -6,8 +6,8 @@ type GenderEnum uint
 
 // Gender enum.
 const (
-	MALE   = 0
-	FEMALE = 1
+	MALE   = 1
+	FEMALE = 2
 )
 
 // UserInfo is information about the user.
@@ -23,4 +23,13 @@ type UserProfileCard struct {
 	DateOfBirth   *time.Time
 	Gender        *GenderEnum
 	AvatarFileKey *string
+}
+
+// FollowedUser is user that is followed to.
+type FollowedUser struct {
+	FollowLinkId     int64
+	SendedLikesCount uint32
+	UserId           int64
+	Name             string
+	AvatarFileKey    *string
 }

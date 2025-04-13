@@ -77,3 +77,40 @@ func (s *Storage) UserProfileCard(
 
 	return &card, nil
 }
+
+// FollowedUsersByUserId returns a list of users that the given user is followed to.
+func (s *Storage) FollowedUsersByUserId(
+	ctx context.Context,
+	userId int64,
+) ([]*dto.FollowedUser, error) {
+	const op = "sqlite.FollowedUsersByUserId"
+
+	stmt, err := s.db.PrepareContext(ctx,
+		`select f.id, f.sended_likes_count, u.id, u.name, u.avatar_file__key
+		from follows f
+			join users u on f.followed_user_id = u.id
+		where f.following_user_id = ?;`)
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := stmt.QueryContext(ctx, userId)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer rows.Close()
+
+	followedUsers := make([]*dto.FollowedUser, 0)
+	for rows.Next() {
+		fu := &dto.FollowedUser{}
+		err := rows.Scan(&fu.FollowLinkId, &fu.SendedLikesCount, &fu.UserId, &fu.Name, &fu.AvatarFileKey)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		followedUsers = append(followedUsers, fu)
+	}
+
+	return followedUsers, nil
+}
