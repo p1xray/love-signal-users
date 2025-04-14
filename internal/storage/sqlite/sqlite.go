@@ -86,10 +86,11 @@ func (s *Storage) FollowedUsersByUserId(
 	const op = "sqlite.FollowedUsersByUserId"
 
 	stmt, err := s.db.PrepareContext(ctx,
-		`select f.id, f.sended_likes_count, u.id, u.name, u.avatar_file__key
+		`select f.id, f.sended_likes_count, followed_user.id, followed_user.name, followed_user.avatar_file__key
 		from follows f
-			join users u on f.followed_user_id = u.id
-		where f.following_user_id = ?;`)
+			join users user on f.following_user_id = user.id
+			join users followed_user on f.followed_user_id = followed_user.id
+		where f.deleted = false and user.deleted = false and followed_user.deleted = false and user.id = ?;`)
 
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
