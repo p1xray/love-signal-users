@@ -3,9 +3,13 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"love-signal-users/internal/dto"
+	"love-signal-users/internal/storage"
+	"time"
 
+	"github.com/mattn/go-sqlite3"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -114,4 +118,34 @@ func (s *Storage) FollowedUsersByUserId(
 	}
 
 	return followedUsers, nil
+}
+
+// AddFollowLink adds a follow link with the given user IDs.
+func (s *Storage) AddFollowLink(
+	ctx context.Context,
+	userId int64,
+	userIdToFollow int64,
+) error {
+	const op = "sqlite.AddFollowedUser"
+
+	stmt, err := s.db.Prepare(
+		`insert into follows (following_user_id, followed_user_id, sended_likes_count, deleted, created_at, updated_at)
+		values (?, ?, ?, ?, ?, ?);`)
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	now := time.Now()
+	_, err = stmt.ExecContext(ctx, userId, userIdToFollow, 0, false, now, now)
+	if err != nil {
+		var sqliteErr sqlite3.Error
+		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+			return fmt.Errorf("%s: %w", op, storage.ErrFollowExist)
+		}
+
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }

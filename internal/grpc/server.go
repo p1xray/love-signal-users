@@ -35,6 +35,13 @@ type UsersService interface {
 		ctx context.Context,
 		userId int64,
 	) ([]*dto.FollowedUser, error)
+
+	// FollowUser adds the user with userIdToFollow to the list of followed users with userId.
+	FollowUser(
+		ctx context.Context,
+		userId int64,
+		userIdToFollow int64,
+	) error
 }
 
 type serverAPI struct {
@@ -137,6 +144,23 @@ func (s *serverAPI) FollowedUsers(
 	return followedUsersResponse, nil
 }
 
+// FollowUser adds the user with userIdToFollow to the list of followed users with userId.
+func (s *serverAPI) FollowUser(
+	ctx context.Context,
+	req *userspb.FollowUserRequest,
+) (*userspb.FollowUserResponse, error) {
+	if err := validateFollowUserRequest(req); err != nil {
+		return &userspb.FollowUserResponse{Success: false}, err
+	}
+
+	err := s.users.FollowUser(ctx, req.GetUserId(), req.GetUserIdToFollow())
+	if err != nil {
+		return &userspb.FollowUserResponse{Success: false}, internalError("failed to follow user")
+	}
+
+	return &userspb.FollowUserResponse{Success: true}, nil
+}
+
 func validateUserInfoRequest(req *userspb.UserInfoRequest) error {
 	if req.GetUserExternalId() == emptyValue {
 		return invalidArgumentError("user_external_id is empty")
@@ -155,7 +179,19 @@ func validateUserProfileCardRequest(req *userspb.UserProfileCardRequest) error {
 
 func validateFollowedUsersRequest(req *userspb.FollowedUsersRequest) error {
 	if req.GetUserId() == emptyValue {
-		return invalidArgumentError("id is empty")
+		return invalidArgumentError("user id is empty")
+	}
+
+	return nil
+}
+
+func validateFollowUserRequest(req *userspb.FollowUserRequest) error {
+	if req.GetUserId() == emptyValue {
+		return invalidArgumentError("user id is empty")
+	}
+
+	if req.GetUserIdToFollow() == emptyValue {
+		return invalidArgumentError("user id to follow is empty")
 	}
 
 	return nil

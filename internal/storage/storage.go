@@ -28,4 +28,11 @@ type UserStorage interface {
 		ctx context.Context,
 		userId int64,
 	) ([]*dto.FollowedUser, error)
+
+	// AddFollowLink adds a follow link with the given user IDs.
+	AddFollowLink(
+		ctx context.Context,
+		userId int64,
+		userIdToFollow int64,
+	) error
 }

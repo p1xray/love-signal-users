@@ -87,3 +87,40 @@ func (us *UsersService) FollowedUsers(
 
 	return followedUsers, nil
 }
+
+// FollowUser adds the user with userIdToFollow to the list of followed users with userId.
+func (us *UsersService) FollowUser(
+	ctx context.Context,
+	userId int64,
+	userIdToFollow int64,
+) error {
+	const op = "service.FollowUser"
+
+	log := us.log.With(
+		slog.String("op", op),
+		slog.Int64("user id", userId),
+		slog.Int64("user id to follow", userIdToFollow),
+	)
+
+	user, err := us.storage.UserInfoByExternalId(ctx, userId)
+	if err != nil {
+		log.Error("failed to get user by user id", sl.Err(err))
+
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	userToFollow, err := us.storage.UserInfoByExternalId(ctx, userIdToFollow)
+	if err != nil {
+		log.Error("failed to get user to follow by user id", sl.Err(err))
+
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if err := us.storage.AddFollowLink(ctx, user.Id, userToFollow.Id); err != nil {
+		log.Error("failed to added followed user", sl.Err(err))
+
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
