@@ -23,4 +23,5 @@ CREATE TABLE IF NOT EXISTS follows
   FOREIGN KEY (following_user_id)  REFERENCES users (id),
   FOREIGN KEY (followed_user_id)  REFERENCES users (id)
 );
-CREATE INDEX IF NOT EXISTS ix_follows_followed_user_id ON follows (followed_user_id);
+CREATE INDEX IF NOT EXISTS ix_follows_following_user_id ON follows (following_user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_follows_following_user_id_followed_user_id ON follows (following_user_id, followed_user_id);

@@ -129,7 +129,7 @@ func (s *serverAPI) FollowedUsers(
 	followedUsersPb := make([]*userspb.FollowedUser, 0)
 	for _, fu := range followedUsers {
 		var avatarFileKeyPb *wrapperspb.StringValue
-		if fu.AvatarFileKey == nil {
+		if fu.AvatarFileKey != nil {
 			avatarFileKeyPb = wrapperspb.String(*fu.AvatarFileKey)
 		}
 
