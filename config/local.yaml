@@ -1,0 +1,5 @@
+env: 'local'
+storage_path: './storage/users.db'
+grpc:
+  port: 6005
+  timeout: 1h
