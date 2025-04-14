@@ -17,6 +17,12 @@ type UserStorage interface {
 		userExternalId int64,
 	) (*dto.UserInfo, error)
 
+	// UserInfoById returns information about a user by their identifier.
+	UserInfoById(
+		ctx context.Context,
+		userId int64,
+	) (*dto.UserInfo, error)
+
 	// UserProfileCard returns the user profile card.
 	UserProfileCard(
 		ctx context.Context,

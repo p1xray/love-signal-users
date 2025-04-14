@@ -102,14 +102,14 @@ func (us *UsersService) FollowUser(
 		slog.Int64("user id to follow", userIdToFollow),
 	)
 
-	user, err := us.storage.UserInfoByExternalId(ctx, userId)
+	user, err := us.storage.UserInfoById(ctx, userId)
 	if err != nil {
 		log.Error("failed to get user by user id", sl.Err(err))
 
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	userToFollow, err := us.storage.UserInfoByExternalId(ctx, userIdToFollow)
+	userToFollow, err := us.storage.UserInfoById(ctx, userIdToFollow)
 	if err != nil {
 		log.Error("failed to get user to follow by user id", sl.Err(err))
 

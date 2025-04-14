@@ -55,6 +55,32 @@ func (s *Storage) UserInfoByExternalId(
 	return &user, nil
 }
 
+// UserInfoById returns information about a user by their identifier.
+func (s *Storage) UserInfoById(
+	ctx context.Context,
+	userId int64,
+) (*dto.UserInfo, error) {
+	const op = "sqlite.UserInfoById"
+
+	stmt, err := s.db.PrepareContext(ctx,
+		"select u.id, u.name from users u where u.deleted = false and u.id = ?;")
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	row := stmt.QueryRowContext(ctx, userId)
+
+	var user dto.UserInfo
+	err = row.Scan(&user.Id, &user.Name)
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return &user, nil
+}
+
 // UserProfileCard returns the user profile card.
 func (s *Storage) UserProfileCard(
 	ctx context.Context,
