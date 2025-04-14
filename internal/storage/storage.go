@@ -35,4 +35,10 @@ type UserStorage interface {
 		userId int64,
 		userIdToFollow int64,
 	) error
+
+	// RemoveFollowLink removes a follow link by followLinkId.
+	RemoveFollowLink(
+		ctx context.Context,
+		followLinkId int64,
+	) error
 }

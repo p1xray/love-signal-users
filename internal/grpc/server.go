@@ -42,6 +42,12 @@ type UsersService interface {
 		userId int64,
 		userIdToFollow int64,
 	) error
+
+	// UnfollowUser removes a user from the follow list.
+	UnfollowUser(
+		ctx context.Context,
+		followLinkId int64,
+	) error
 }
 
 type serverAPI struct {
@@ -161,6 +167,23 @@ func (s *serverAPI) FollowUser(
 	return &userspb.FollowUserResponse{Success: true}, nil
 }
 
+// UnfollowUser removes a user from the follow list.
+func (s *serverAPI) UnfollowUser(
+	ctx context.Context,
+	req *userspb.UnfollowUserRequest,
+) (*userspb.UnfollowUserResponse, error) {
+	if err := validateUnfollowUserRequest(req); err != nil {
+		return &userspb.UnfollowUserResponse{Success: false}, err
+	}
+
+	err := s.users.UnfollowUser(ctx, req.GetFollowLinkId())
+	if err != nil {
+		return &userspb.UnfollowUserResponse{Success: false}, internalError("failed to follow user")
+	}
+
+	return &userspb.UnfollowUserResponse{Success: true}, nil
+}
+
 func validateUserInfoRequest(req *userspb.UserInfoRequest) error {
 	if req.GetUserExternalId() == emptyValue {
 		return invalidArgumentError("user_external_id is empty")
@@ -192,6 +215,14 @@ func validateFollowUserRequest(req *userspb.FollowUserRequest) error {
 
 	if req.GetUserIdToFollow() == emptyValue {
 		return invalidArgumentError("user id to follow is empty")
+	}
+
+	return nil
+}
+
+func validateUnfollowUserRequest(req *userspb.UnfollowUserRequest) error {
+	if req.GetFollowLinkId() == emptyValue {
+		return invalidArgumentError("follow link id is empty")
 	}
 
 	return nil

@@ -124,3 +124,24 @@ func (us *UsersService) FollowUser(
 
 	return nil
 }
+
+// UnfollowUser removes a user from the follow list.
+func (us *UsersService) UnfollowUser(
+	ctx context.Context,
+	followLinkId int64,
+) error {
+	const op = "service.UnfollowUser"
+
+	log := us.log.With(
+		slog.String("op", op),
+		slog.Int64("follow link id", followLinkId),
+	)
+
+	if err := us.storage.RemoveFollowLink(ctx, followLinkId); err != nil {
+		log.Error("failed to remove follow link", sl.Err(err))
+
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

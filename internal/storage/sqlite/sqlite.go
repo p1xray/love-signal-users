@@ -128,7 +128,7 @@ func (s *Storage) AddFollowLink(
 ) error {
 	const op = "sqlite.AddFollowedUser"
 
-	stmt, err := s.db.Prepare(
+	stmt, err := s.db.PrepareContext(ctx,
 		`insert into follows (following_user_id, followed_user_id, sended_likes_count, deleted, created_at, updated_at)
 		values (?, ?, ?, ?, ?, ?);`)
 
@@ -144,6 +144,30 @@ func (s *Storage) AddFollowLink(
 			return fmt.Errorf("%s: %w", op, storage.ErrFollowExist)
 		}
 
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+// RemoveFollowLink removes a follow link by followLinkId.
+func (s *Storage) RemoveFollowLink(
+	ctx context.Context,
+	followLinkId int64,
+) error {
+	const op = "sqlite.RemoveFollowLink"
+
+	stmt, err := s.db.PrepareContext(ctx,
+		`update follows
+		set deleted = true
+		where id = ?;`)
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = stmt.ExecContext(ctx, followLinkId)
+	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
