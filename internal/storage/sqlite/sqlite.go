@@ -120,7 +120,7 @@ func (s *Storage) FollowedUsersByUserId(
 		from follows f
 			join users user on f.following_user_id = user.id
 			join users followed_user on f.followed_user_id = followed_user.id
-		where f.deleted = false and user.deleted = false and followed_user.deleted = false and user.id = ?;`)
+		where f.deleted = false and user.deleted = false and followed_user.deleted = false and f.following_user_id = ?;`)
 
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
