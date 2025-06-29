@@ -136,7 +136,7 @@ func (s *serverAPI) GetFollowedUsers(
 		followedUserPb := &lsuserspb.FollowedUser{
 			FollowLinkId:  fu.FollowLinkID,
 			NumberOfLikes: fu.NumberOfLikes,
-			UserId:        fu.UserId,
+			UserId:        fu.UserID,
 			FullName:      fu.FullName,
 			AvatarFileKey: avatarFileKeyPb,
 		}
@@ -164,7 +164,7 @@ func (s *serverAPI) FollowUser(
 		if errors.Is(err, service.ErrUserNotFound) {
 			return nil, server.NotFoundError("user not found")
 		}
-		
+
 		return &lsuserspb.FollowUserResponse{Success: false}, server.InternalError("error following user")
 	}
 
