@@ -37,7 +37,7 @@ func (s *Service) UserData(
 		slog.Int64("user ID", userID),
 	)
 
-	userData, err := s.storage.UserData(ctx, userID)
+	user, err := s.storage.UserData(ctx, userID)
 	if err != nil {
 		if errors.Is(err, storage.ErrEntityNotFound) {
 			log.Warn("user not found", sl.Err(err))
@@ -48,6 +48,21 @@ func (s *Service) UserData(
 		log.Error("error getting user data by user ID", sl.Err(err))
 
 		return dto.UserData{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	genderNumeric := user.Gender.Ptr()
+	var gender *dto.GenderEnum
+	if genderNumeric != nil {
+		genderValue := dto.GenderEnum(*genderNumeric)
+		gender = &genderValue
+	}
+
+	userData := dto.UserData{
+		ID:            user.ID,
+		FullName:      user.FullName,
+		DateOfBirth:   user.DateOfBirth.Ptr(),
+		Gender:        gender,
+		AvatarFileKey: user.AvatarFileKey.Ptr(),
 	}
 
 	return userData, nil
@@ -65,7 +80,7 @@ func (s *Service) UserDataByExternalID(
 		slog.Int64("user external ID", userExternalID),
 	)
 
-	userData, err := s.storage.UserDataByExternalId(ctx, userExternalID)
+	user, err := s.storage.UserDataByExternalID(ctx, userExternalID)
 	if err != nil {
 		if errors.Is(err, storage.ErrEntityNotFound) {
 			log.Warn("user not found", sl.Err(err))
@@ -76,6 +91,21 @@ func (s *Service) UserDataByExternalID(
 		log.Error("error getting user data by user external ID", sl.Err(err))
 
 		return dto.UserData{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	genderNumeric := user.Gender.Ptr()
+	var gender *dto.GenderEnum
+	if genderNumeric != nil {
+		genderValue := dto.GenderEnum(*genderNumeric)
+		gender = &genderValue
+	}
+
+	userData := dto.UserData{
+		ID:            user.ID,
+		FullName:      user.FullName,
+		DateOfBirth:   user.DateOfBirth.Ptr(),
+		Gender:        gender,
+		AvatarFileKey: user.AvatarFileKey.Ptr(),
 	}
 
 	return userData, nil
@@ -100,7 +130,19 @@ func (s *Service) FollowedUsers(
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return followedUsers, nil
+	followedUsersDTO := make([]dto.FollowedUser, 0, len(followedUsers))
+	for _, fu := range followedUsers {
+		followedUserDTO := dto.FollowedUser{
+			FollowLinkID:  fu.FollowLink.ID,
+			NumberOfLikes: fu.FollowLink.NumberOfLikes,
+			UserID:        fu.FollowedUser.ID,
+			FullName:      fu.FollowedUser.FullName,
+			AvatarFileKey: fu.FollowedUser.AvatarFileKey.Ptr(),
+		}
+		followedUsersDTO = append(followedUsersDTO, followedUserDTO)
+	}
+
+	return followedUsersDTO, nil
 }
 
 // FollowUser adds the user with userIDToFollow to the list of followed users with userID.

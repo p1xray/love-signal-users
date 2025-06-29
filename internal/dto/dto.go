@@ -23,7 +23,7 @@ type UserData struct {
 type FollowedUser struct {
 	FollowLinkID  int64
 	NumberOfLikes uint32
-	UserId        int64
+	UserID        int64
 	FullName      string
 	AvatarFileKey *string
 }

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"errors"
-	"love-signal-users/internal/dto"
+	"love-signal-users/internal/storage/domain"
 )
 
 var (
@@ -15,19 +15,19 @@ type UserStorage interface {
 	UserData(
 		ctx context.Context,
 		userID int64,
-	) (dto.UserData, error)
+	) (domain.User, error)
 
-	// UserDataByExternalId returns information about a user by their external ID.
-	UserDataByExternalId(
+	// UserDataByExternalID returns information about a user by their external ID.
+	UserDataByExternalID(
 		ctx context.Context,
 		userExternalID int64,
-	) (dto.UserData, error)
+	) (domain.User, error)
 
 	// FollowedUsers returns a list of users that the given user is followed to.
 	FollowedUsers(
 		ctx context.Context,
 		userID int64,
-	) ([]dto.FollowedUser, error)
+	) ([]domain.FollowedUser, error)
 
 	// AddFollowLink adds a follow link with the given user IDs.
 	AddFollowLink(
