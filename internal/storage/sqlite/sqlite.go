@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"love-signal-users/internal/dto"
 	"love-signal-users/internal/storage"
+	"love-signal-users/internal/storage/domain"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
@@ -29,113 +29,164 @@ func New(storagePath string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-// UserInfoByExternalId returns information about a user by their external identifier.
-func (s *Storage) UserInfoByExternalId(
+// UserData returns information about a user by their ID.
+func (s *Storage) UserData(
 	ctx context.Context,
-	userExternalId int64,
-) (*dto.UserInfo, error) {
-	const op = "sqlite.UserByExternalId"
+	userID int64,
+) (domain.User, error) {
+	const op = "sqlite.UserData"
 
 	stmt, err := s.db.PrepareContext(ctx,
-		"select u.id, u.name from users u where u.deleted = false and u.external_id = ?;")
+		`select
+    	u.id,
+    	u.external_id,
+    	u.full_name,
+    	u.date_of_birth,
+    	u.gender,
+    	u.avatar_file_key,
+    	u.deleted,
+    	u.created_at,
+    	u.updated_at
+		from users u
+		where u.deleted = false and u.id = ?;`)
 
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return domain.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	row := stmt.QueryRowContext(ctx, userExternalId)
+	row := stmt.QueryRowContext(ctx, userID)
 
-	var user dto.UserInfo
-	err = row.Scan(&user.Id, &user.Name)
-
+	var user domain.User
+	err = row.Scan(
+		&user.ID,
+		&user.ExternalID,
+		&user.FullName,
+		&user.DateOfBirth,
+		&user.Gender,
+		&user.AvatarFileKey,
+		&user.Deleted,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, fmt.Errorf("%s: %w", op, storage.ErrEntityNotFound)
+		}
+
+		return domain.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
-// UserInfoById returns information about a user by their identifier.
-func (s *Storage) UserInfoById(
+// UserDataByExternalID returns information about a user by their external ID.
+func (s *Storage) UserDataByExternalID(
 	ctx context.Context,
-	userId int64,
-) (*dto.UserInfo, error) {
-	const op = "sqlite.UserInfoById"
+	userExternalID int64,
+) (domain.User, error) {
+	const op = "sqlite.UserDataByExternalID"
 
 	stmt, err := s.db.PrepareContext(ctx,
-		"select u.id, u.name from users u where u.deleted = false and u.id = ?;")
+		`select
+    	u.id,
+    	u.external_id,
+    	u.full_name,
+    	u.date_of_birth,
+    	u.gender,
+    	u.avatar_file_key,
+    	u.deleted,
+    	u.created_at,
+    	u.updated_at
+		from users u
+		where u.deleted = false and u.id = ?;`)
 
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return domain.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	row := stmt.QueryRowContext(ctx, userId)
+	row := stmt.QueryRowContext(ctx, userExternalID)
 
-	var user dto.UserInfo
-	err = row.Scan(&user.Id, &user.Name)
-
+	var user domain.User
+	err = row.Scan(
+		&user.ID,
+		&user.ExternalID,
+		&user.FullName,
+		&user.DateOfBirth,
+		&user.Gender,
+		&user.AvatarFileKey,
+		&user.Deleted,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, fmt.Errorf("%s: %w", op, storage.ErrEntityNotFound)
+		}
+
+		return domain.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
-// UserProfileCard returns the user profile card.
-func (s *Storage) UserProfileCard(
+// FollowedUsers returns a list of users that the given user is followed to.
+func (s *Storage) FollowedUsers(
 	ctx context.Context,
-	userId int64,
-) (*dto.UserProfileCard, error) {
-	const op = "sqlite.UserProfileCard"
+	userID int64,
+) ([]domain.FollowedUser, error) {
+	const op = "sqlite.FollowedUsers"
 
 	stmt, err := s.db.PrepareContext(ctx,
-		`select u.id, u.name, u.date_of_birth, u.gender, u.avatar_file__key
-		from users u where u.deleted = false and u.id = ?;`)
-
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	row := stmt.QueryRowContext(ctx, userId)
-
-	var card dto.UserProfileCard
-	err = row.Scan(&card.Id, &card.Name, &card.DateOfBirth, &card.Gender, &card.AvatarFileKey)
-
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return &card, nil
-}
-
-// FollowedUsersByUserId returns a list of users that the given user is followed to.
-func (s *Storage) FollowedUsersByUserId(
-	ctx context.Context,
-	userId int64,
-) ([]*dto.FollowedUser, error) {
-	const op = "sqlite.FollowedUsersByUserId"
-
-	stmt, err := s.db.PrepareContext(ctx,
-		`select f.id, f.sended_likes_count, followed_user.id, followed_user.name, followed_user.avatar_file__key
+		`select
+    	f.id,
+    	f.following_user_id,
+    	f.followed_user_id,
+    	f.number_of_likes,
+    	f.created_at,
+    	f.updated_at,
+    	followed_user.id,
+    	followed_user.external_id,
+    	followed_user.full_name,
+    	followed_user.date_of_birth,
+    	followed_user.gender,
+    	followed_user.avatar_file_key,
+    	followed_user.deleted,
+    	followed_user.created_at,
+    	followed_user.updated_at
 		from follows f
 			join users user on f.following_user_id = user.id
 			join users followed_user on f.followed_user_id = followed_user.id
-		where f.deleted = false and user.deleted = false and followed_user.deleted = false and f.following_user_id = ?;`)
+		where user.deleted = false and followed_user.deleted = false and f.following_user_id = ?;`)
 
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	rows, err := stmt.QueryContext(ctx, userId)
+	rows, err := stmt.QueryContext(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	defer rows.Close()
 
-	followedUsers := make([]*dto.FollowedUser, 0)
+	followedUsers := make([]domain.FollowedUser, 0)
 	for rows.Next() {
-		fu := &dto.FollowedUser{}
-		err := rows.Scan(&fu.FollowLinkId, &fu.SendedLikesCount, &fu.UserId, &fu.Name, &fu.AvatarFileKey)
+		fu := domain.FollowedUser{}
+		err = rows.Scan(
+			&fu.FollowLink.ID,
+			&fu.FollowLink.FollowingUserID,
+			&fu.FollowLink.FollowedUserID,
+			&fu.FollowLink.NumberOfLikes,
+			&fu.FollowLink.CreatedAt,
+			&fu.FollowLink.UpdatedAt,
+			&fu.FollowedUser.ID,
+			&fu.FollowedUser.ExternalID,
+			&fu.FollowedUser.FullName,
+			&fu.FollowedUser.DateOfBirth,
+			&fu.FollowedUser.Gender,
+			&fu.FollowedUser.AvatarFileKey,
+			&fu.FollowedUser.Deleted,
+			&fu.FollowedUser.CreatedAt,
+			&fu.FollowedUser.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -149,21 +200,21 @@ func (s *Storage) FollowedUsersByUserId(
 // AddFollowLink adds a follow link with the given user IDs.
 func (s *Storage) AddFollowLink(
 	ctx context.Context,
-	userId int64,
-	userIdToFollow int64,
+	userID int64,
+	userIDToFollow int64,
 ) error {
-	const op = "sqlite.AddFollowedUser"
+	const op = "sqlite.AddFollowLink"
 
 	stmt, err := s.db.PrepareContext(ctx,
-		`insert into follows (following_user_id, followed_user_id, sended_likes_count, deleted, created_at, updated_at)
-		values (?, ?, ?, ?, ?, ?);`)
+		`insert into follows (following_user_id, followed_user_id, created_at, updated_at)
+		values (?, ?, ?, ?);`)
 
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	now := time.Now()
-	_, err = stmt.ExecContext(ctx, userId, userIdToFollow, 0, false, now, now)
+	_, err = stmt.ExecContext(ctx, userID, userIDToFollow, now, now)
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
@@ -176,23 +227,20 @@ func (s *Storage) AddFollowLink(
 	return nil
 }
 
-// RemoveFollowLink removes a follow link by followLinkId.
+// RemoveFollowLink removes a follow link by followLinkID.
 func (s *Storage) RemoveFollowLink(
 	ctx context.Context,
-	followLinkId int64,
+	followLinkID int64,
 ) error {
 	const op = "sqlite.RemoveFollowLink"
 
-	stmt, err := s.db.PrepareContext(ctx,
-		`update follows
-		set deleted = true
-		where id = ?;`)
+	stmt, err := s.db.PrepareContext(ctx, "delete from follows where id = ?;")
 
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	_, err = stmt.ExecContext(ctx, followLinkId)
+	_, err = stmt.ExecContext(ctx, followLinkID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

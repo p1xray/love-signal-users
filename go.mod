@@ -1,12 +1,14 @@
 module love-signal-users
 
-go 1.23.4
+go 1.24.4
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.18.2
+	github.com/golang/protobuf v1.5.4
+	github.com/guregu/null/v6 v6.0.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/mattn/go-sqlite3 v1.14.27
-	github.com/p1xray/love-signal-protos v0.0.9
+	github.com/p1xray/love-signal-protos v0.0.10
 	google.golang.org/protobuf v1.36.4
 )
 

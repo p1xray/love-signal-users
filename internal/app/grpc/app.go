@@ -3,7 +3,8 @@ package grpcapp
 import (
 	"fmt"
 	"log/slog"
-	usersserver "love-signal-users/internal/grpc"
+	server "love-signal-users/internal/grpc"
+	usersserver "love-signal-users/internal/grpc/users"
 	"net"
 
 	"google.golang.org/grpc"
@@ -20,7 +21,7 @@ type App struct {
 func New(
 	log *slog.Logger,
 	port int,
-	usersService usersserver.UsersService,
+	usersService server.UsersService,
 ) *App {
 	gRPCServer := grpc.NewServer()
 

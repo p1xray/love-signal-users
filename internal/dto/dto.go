@@ -10,16 +10,10 @@ const (
 	FEMALE = 2
 )
 
-// UserInfo is information about the user.
-type UserInfo struct {
-	Id   int64
-	Name string
-}
-
-// UserProfileCard is user profile card.
-type UserProfileCard struct {
-	Id            int64
-	Name          string
+// UserData is information about the user.
+type UserData struct {
+	ID            int64
+	FullName      string
 	DateOfBirth   *time.Time
 	Gender        *GenderEnum
 	AvatarFileKey *string
@@ -27,9 +21,9 @@ type UserProfileCard struct {
 
 // FollowedUser is user that is followed to.
 type FollowedUser struct {
-	FollowLinkId     int64
-	SendedLikesCount uint32
-	UserId           int64
-	Name             string
-	AvatarFileKey    *string
+	FollowLinkID  int64
+	NumberOfLikes uint32
+	UserID        int64
+	FullName      string
+	AvatarFileKey *string
 }
