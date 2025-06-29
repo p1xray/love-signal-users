@@ -123,7 +123,7 @@ func (s *serverAPI) GetFollowedUsers(
 
 	followedUsers, err := s.users.FollowedUsers(ctx, req.GetUserId())
 	if err != nil {
-		return nil, server.InternalError("failed to get followed users")
+		return nil, server.InternalError("error getting followed users")
 	}
 
 	followedUsersPb := make([]*lsuserspb.FollowedUser, 0)
