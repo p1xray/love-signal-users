@@ -6,7 +6,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/mattn/go-sqlite3 v1.14.27
-	github.com/p1xray/love-signal-protos v0.0.9
+	github.com/p1xray/love-signal-protos v0.0.10
 	google.golang.org/protobuf v1.36.4
 )
 
