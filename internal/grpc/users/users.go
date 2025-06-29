@@ -2,12 +2,14 @@ package usersserver
 
 import (
 	"context"
+	"errors"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	lsuserspb "github.com/p1xray/love-signal-protos/gen/go/users"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	server "love-signal-users/internal/grpc"
+	"love-signal-users/internal/service"
 )
 
 const (
@@ -35,6 +37,10 @@ func (s *serverAPI) GetUserData(
 
 	userData, err := s.users.UserData(ctx, req.GetUserId())
 	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			return nil, server.NotFoundError("user not found")
+		}
+
 		return nil, server.InternalError("error getting user data")
 	}
 
@@ -54,7 +60,7 @@ func (s *serverAPI) GetUserData(
 	}
 
 	userDataResponse := &lsuserspb.UserDataResponse{
-		Id:            userData.Id,
+		Id:            userData.ID,
 		FullName:      userData.FullName,
 		DateOfBirth:   dateOfBirthPb,
 		Gender:        genderPb,
@@ -72,8 +78,12 @@ func (s *serverAPI) GetUserDataByExternalId(
 		return nil, err
 	}
 
-	userData, err := s.users.UserDataByExternalId(ctx, req.GetUserExternalId())
+	userData, err := s.users.UserDataByExternalID(ctx, req.GetUserExternalId())
 	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			return nil, server.NotFoundError("user not found")
+		}
+
 		return nil, server.InternalError("error getting user data")
 	}
 
@@ -93,7 +103,7 @@ func (s *serverAPI) GetUserDataByExternalId(
 	}
 
 	userDataResponse := &lsuserspb.UserDataResponse{
-		Id:            userData.Id,
+		Id:            userData.ID,
 		FullName:      userData.FullName,
 		DateOfBirth:   dateOfBirthPb,
 		Gender:        genderPb,
@@ -124,7 +134,7 @@ func (s *serverAPI) GetFollowedUsers(
 		}
 
 		followedUserPb := &lsuserspb.FollowedUser{
-			FollowLinkId:  fu.FollowLinkId,
+			FollowLinkId:  fu.FollowLinkID,
 			NumberOfLikes: fu.NumberOfLikes,
 			UserId:        fu.UserId,
 			FullName:      fu.FullName,
@@ -151,6 +161,10 @@ func (s *serverAPI) FollowUser(
 
 	err := s.users.FollowUser(ctx, req.GetUserId(), req.GetUserIdToFollow())
 	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			return nil, server.NotFoundError("user not found")
+		}
+		
 		return &lsuserspb.FollowUserResponse{Success: false}, server.InternalError("error following user")
 	}
 

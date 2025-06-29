@@ -12,7 +12,7 @@ const (
 
 // UserData is information about the user.
 type UserData struct {
-	Id            int64
+	ID            int64
 	FullName      string
 	DateOfBirth   *time.Time
 	Gender        *GenderEnum
@@ -21,7 +21,7 @@ type UserData struct {
 
 // FollowedUser is user that is followed to.
 type FollowedUser struct {
-	FollowLinkId  int64
+	FollowLinkID  int64
 	NumberOfLikes uint32
 	UserId        int64
 	FullName      string

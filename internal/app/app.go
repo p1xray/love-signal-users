@@ -3,7 +3,7 @@ package app
 import (
 	"log/slog"
 	grpcapp "love-signal-users/internal/app/grpc"
-	"love-signal-users/internal/service"
+	"love-signal-users/internal/service/users"
 	"love-signal-users/internal/storage/sqlite"
 )
 
@@ -23,7 +23,7 @@ func New(
 		panic(err)
 	}
 
-	usersService := service.New(log, storage)
+	usersService := users.New(log, storage)
 
 	grpcApp := grpcapp.New(log, grpcPort, usersService)
 
