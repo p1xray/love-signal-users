@@ -1,4 +1,4 @@
-package usersserver
+package users
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	lsuserspb "github.com/p1xray/love-signal-protos/gen/go/users"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
-	server "love-signal-users/internal/grpc"
+	"love-signal-users/internal/controller"
+	"love-signal-users/internal/controller/grpc/response"
 	"love-signal-users/internal/service"
 )
 
@@ -18,12 +18,21 @@ const (
 
 type serverAPI struct {
 	lsuserspb.UnimplementedUsersServer
-	users server.UsersService
+	userDataUseCase             controller.UserData
+	userDataByExternalIDUseCase controller.UserDataByExternalID
 }
 
-// Register registers the implementation of the API service with the gRPC server.
-func Register(gRPC *grpc.Server, users server.UsersService) {
-	lsuserspb.RegisterUsersServer(gRPC, &serverAPI{users: users})
+// RegisterUsersServer registers the implementation of the API service with the gRPC server.
+func RegisterUsersServer(
+	gRPC *grpc.Server,
+	userDataUseCase controller.UserData,
+	userDataByExternalIDUseCase controller.UserDataByExternalID,
+) {
+	api := &serverAPI{
+		userDataUseCase:             userDataUseCase,
+		userDataByExternalIDUseCase: userDataByExternalIDUseCase,
+	}
+	lsuserspb.RegisterUsersServer(gRPC, api)
 }
 
 // GetUserData returns information about a user by their ID.
@@ -35,13 +44,13 @@ func (s *serverAPI) GetUserData(
 		return nil, err
 	}
 
-	userData, err := s.users.UserData(ctx, req.GetUserId())
+	userData, err := s.userDataUseCase.Execute(ctx, req.GetUserId())
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) {
-			return nil, server.NotFoundError("user not found")
+			return nil, response.NotFoundError("user not found")
 		}
 
-		return nil, server.InternalError("error getting user data")
+		return nil, response.InternalError("error getting user data")
 	}
 
 	var dateOfBirthPb *timestamppb.Timestamp
@@ -67,6 +76,14 @@ func (s *serverAPI) GetUserData(
 		AvatarFileKey: avatarFileKeyPb,
 	}
 	return userDataResponse, nil
+}
+
+func validateGetUserDataRequest(req *lsuserspb.GetUserDataRequest) error {
+	if req.GetUserId() == emptyValue {
+		return response.InvalidArgumentError("user id is empty")
+	}
+
+	return nil
 }
 
 // GetUserDataByExternalId returns information about a user by their external ID.
@@ -78,13 +95,13 @@ func (s *serverAPI) GetUserDataByExternalId(
 		return nil, err
 	}
 
-	userData, err := s.users.UserDataByExternalID(ctx, req.GetUserExternalId())
+	userData, err := s.userDataByExternalIDUseCase.Execute(ctx, req.GetUserExternalId())
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) {
-			return nil, server.NotFoundError("user not found")
+			return nil, response.NotFoundError("user not found")
 		}
 
-		return nil, server.InternalError("error getting user data")
+		return nil, response.InternalError("error getting user data")
 	}
 
 	var dateOfBirthPb *timestamppb.Timestamp
@@ -111,6 +128,16 @@ func (s *serverAPI) GetUserDataByExternalId(
 	}
 	return userDataResponse, nil
 }
+
+func validateGetUserDataByExternalIdRequest(req *lsuserspb.GetUserDataByExternalIdRequest) error {
+	if req.GetUserExternalId() == emptyValue {
+		return response.InvalidArgumentError("user external id is empty")
+	}
+
+	return nil
+}
+
+/* TODO: uncomment this after implementing use-cases
 
 // GetFollowedUsers returns a list of users that the given user is followed to.
 func (s *serverAPI) GetFollowedUsers(
@@ -123,7 +150,7 @@ func (s *serverAPI) GetFollowedUsers(
 
 	followedUsers, err := s.users.FollowedUsers(ctx, req.GetUserId())
 	if err != nil {
-		return nil, server.InternalError("error getting followed users")
+		return nil, response.InternalError("error getting followed users")
 	}
 
 	followedUsersPb := make([]*lsuserspb.FollowedUser, 0)
@@ -162,10 +189,10 @@ func (s *serverAPI) FollowUser(
 	err := s.users.FollowUser(ctx, req.GetUserId(), req.GetUserIdToFollow())
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) {
-			return nil, server.NotFoundError("user not found")
+			return nil, response.NotFoundError("user not found")
 		}
 
-		return &lsuserspb.FollowUserResponse{Success: false}, server.InternalError("error following user")
+		return &lsuserspb.FollowUserResponse{Success: false}, response.InternalError("error following user")
 	}
 
 	return &lsuserspb.FollowUserResponse{Success: true}, nil
@@ -182,31 +209,15 @@ func (s *serverAPI) UnfollowUser(
 
 	err := s.users.UnfollowUser(ctx, req.GetFollowLinkId())
 	if err != nil {
-		return &lsuserspb.UnfollowUserResponse{Success: false}, server.InternalError("error unfollowing user")
+		return &lsuserspb.UnfollowUserResponse{Success: false}, response.InternalError("error unfollowing user")
 	}
 
 	return &lsuserspb.UnfollowUserResponse{Success: true}, nil
 }
 
-func validateGetUserDataRequest(req *lsuserspb.GetUserDataRequest) error {
-	if req.GetUserId() == emptyValue {
-		return server.InvalidArgumentError("user id is empty")
-	}
-
-	return nil
-}
-
-func validateGetUserDataByExternalIdRequest(req *lsuserspb.GetUserDataByExternalIdRequest) error {
-	if req.GetUserExternalId() == emptyValue {
-		return server.InvalidArgumentError("user external id is empty")
-	}
-
-	return nil
-}
-
 func validateFollowedUsersRequest(req *lsuserspb.GetFollowedUsersRequest) error {
 	if req.GetUserId() == emptyValue {
-		return server.InvalidArgumentError("userid is empty")
+		return response.InvalidArgumentError("userid is empty")
 	}
 
 	return nil
@@ -214,11 +225,11 @@ func validateFollowedUsersRequest(req *lsuserspb.GetFollowedUsersRequest) error 
 
 func validateFollowUserRequest(req *lsuserspb.FollowUserRequest) error {
 	if req.GetUserId() == emptyValue {
-		return server.InvalidArgumentError("user id is empty")
+		return response.InvalidArgumentError("user id is empty")
 	}
 
 	if req.GetUserIdToFollow() == emptyValue {
-		return server.InvalidArgumentError("user id to follow is empty")
+		return response.InvalidArgumentError("user id to follow is empty")
 	}
 
 	return nil
@@ -226,8 +237,9 @@ func validateFollowUserRequest(req *lsuserspb.FollowUserRequest) error {
 
 func validateUnfollowUserRequest(req *lsuserspb.UnfollowUserRequest) error {
 	if req.GetFollowLinkId() == emptyValue {
-		return server.InvalidArgumentError("follow link id is empty")
+		return response.InvalidArgumentError("follow link id is empty")
 	}
 
 	return nil
 }
+*/
