@@ -11,10 +11,16 @@ func NewRouter(
 	server *grpc.Server,
 	userDataUseCase controller.UserData,
 	userDataByExternalIDUseCase controller.UserDataByExternalID,
+	followedUsersUseCase controller.Followed,
+	followUserUseCase controller.Follow,
+	unfollowUserUseCase controller.Unfollow,
 ) {
 	v1.NewRoutes(
 		server,
 		userDataUseCase,
 		userDataByExternalIDUseCase,
+		followedUsersUseCase,
+		followUserUseCase,
+		unfollowUserUseCase,
 	)
 }

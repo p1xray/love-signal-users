@@ -141,8 +141,8 @@ func (s *Storage) User(ctx context.Context, userID int64) (models.User, error) {
 	return user, nil
 }
 
-// UserDataByExternalID returns information about a user by their external ID from storage.
-func (s *Storage) UserDataByExternalID(ctx context.Context, userExternalID int64) (models.User, error) {
+// UserByExternalID returns information about a user by their external ID from storage.
+func (s *Storage) UserByExternalID(ctx context.Context, externalID int64) (models.User, error) {
 	const op = "sqlite.UserDataByExternalID"
 
 	stmt, err := s.db.PrepareContext(ctx,
@@ -163,7 +163,7 @@ func (s *Storage) UserDataByExternalID(ctx context.Context, userExternalID int64
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	row := stmt.QueryRowContext(ctx, userExternalID)
+	row := stmt.QueryRowContext(ctx, externalID)
 
 	var user models.User
 	err = row.Scan(
@@ -240,7 +240,7 @@ func (s *Storage) FollowsByUserID(
 }
 
 // CreateFollow creates the follow link in storage.
-func (s *Storage) CreateFollow(ctx context.Context, follow models.Follow) error {
+func (s *Storage) CreateFollow(ctx context.Context, follow models.Follow) (int64, error) {
 	const op = "sqlite.CreateFollow"
 
 	stmt, err := s.db.PrepareContext(ctx,
@@ -248,10 +248,10 @@ func (s *Storage) CreateFollow(ctx context.Context, follow models.Follow) error 
 		values (?, ?, ?, ?);`)
 
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	_, err = stmt.ExecContext(
+	res, err := stmt.ExecContext(
 		ctx,
 		follow.FollowingUserID,
 		follow.FollowedUserID,
@@ -262,13 +262,18 @@ func (s *Storage) CreateFollow(ctx context.Context, follow models.Follow) error 
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			return fmt.Errorf("%s: %w", op, infrastructure.ErrFollowExist)
+			return 0, fmt.Errorf("%s: %w", op, infrastructure.ErrFollowExist)
 		}
 
-		return fmt.Errorf("%s: %w", op, err)
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return nil
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return id, nil
 }
 
 // UpdateFollow updates the follow link in storage.
