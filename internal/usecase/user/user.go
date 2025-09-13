@@ -8,8 +8,8 @@ import (
 	"love-signal-users/internal/dto"
 	"love-signal-users/internal/entity"
 	"love-signal-users/internal/infrastructure"
-	"love-signal-users/internal/lib/logger/sl"
 	"love-signal-users/internal/usecase"
+	"love-signal-users/pkg/logger/sl"
 )
 
 // Repository is a repository for user data use-case.

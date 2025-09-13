@@ -10,7 +10,7 @@ import (
 	"love-signal-users/internal/infrastructure"
 	"love-signal-users/internal/infrastructure/converter"
 	"love-signal-users/internal/infrastructure/storage/models"
-	"love-signal-users/internal/lib/logger/sl"
+	"love-signal-users/pkg/logger/sl"
 )
 
 const emptyID = 0

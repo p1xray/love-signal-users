@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"love-signal-users/internal/dto"
 	"love-signal-users/internal/entity"
-	"love-signal-users/internal/lib/logger/sl"
+	"love-signal-users/pkg/logger/sl"
 )
 
 // Repository is a repository for followed users use-case.

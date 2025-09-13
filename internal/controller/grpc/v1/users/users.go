@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"love-signal-users/internal/controller"
 	"love-signal-users/internal/controller/grpc/response"
-	"love-signal-users/internal/service"
+	"love-signal-users/internal/usecase"
 )
 
 const (
@@ -56,7 +56,7 @@ func (s *serverAPI) GetUserData(
 
 	userData, err := s.userDataUseCase.Execute(ctx, req.GetUserId())
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
+		if errors.Is(err, usecase.ErrUserNotFound) {
 			return nil, response.NotFoundError("user not found")
 		}
 
@@ -107,7 +107,7 @@ func (s *serverAPI) GetUserDataByExternalId(
 
 	userData, err := s.userDataByExternalIDUseCase.Execute(ctx, req.GetUserExternalId())
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
+		if errors.Is(err, usecase.ErrUserNotFound) {
 			return nil, response.NotFoundError("user not found")
 		}
 
@@ -204,7 +204,7 @@ func (s *serverAPI) FollowUser(
 
 	err := s.followUserUseCase.Execute(ctx, req.GetUserId(), req.GetUserIdToFollow())
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
+		if errors.Is(err, usecase.ErrUserNotFound) {
 			return nil, response.NotFoundError("user not found")
 		}
 
