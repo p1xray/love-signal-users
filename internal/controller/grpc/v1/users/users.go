@@ -22,6 +22,8 @@ type serverAPI struct {
 	userDataUseCase             controller.UserData
 	userDataByExternalIDUseCase controller.UserDataByExternalID
 	followedUsersUseCase        controller.Followed
+	followUserUseCase           controller.Follow
+	unfollowUserUseCase         controller.Unfollow
 }
 
 // RegisterUsersServer registers the implementation of the API service with the gRPC server.
@@ -30,11 +32,15 @@ func RegisterUsersServer(
 	userDataUseCase controller.UserData,
 	userDataByExternalIDUseCase controller.UserDataByExternalID,
 	followedUsersUseCase controller.Followed,
+	followUserUseCase controller.Follow,
+	unfollowUserUseCase controller.Unfollow,
 ) {
 	api := &serverAPI{
 		userDataUseCase:             userDataUseCase,
 		userDataByExternalIDUseCase: userDataByExternalIDUseCase,
 		followedUsersUseCase:        followedUsersUseCase,
+		followUserUseCase:           followUserUseCase,
+		unfollowUserUseCase:         unfollowUserUseCase,
 	}
 	lsuserspb.RegisterUsersServer(gRPC, api)
 }
@@ -187,8 +193,6 @@ func validateFollowedUsersRequest(req *lsuserspb.GetFollowedUsersRequest) error 
 	return nil
 }
 
-/* TODO: uncomment this after implementing use-cases
-
 // FollowUser adds the user with userIdToFollow to the list of followed users with userId.
 func (s *serverAPI) FollowUser(
 	ctx context.Context,
@@ -198,7 +202,7 @@ func (s *serverAPI) FollowUser(
 		return &lsuserspb.FollowUserResponse{Success: false}, err
 	}
 
-	err := s.users.FollowUser(ctx, req.GetUserId(), req.GetUserIdToFollow())
+	err := s.followUserUseCase.Execute(ctx, req.GetUserId(), req.GetUserIdToFollow())
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) {
 			return nil, response.NotFoundError("user not found")
@@ -208,23 +212,6 @@ func (s *serverAPI) FollowUser(
 	}
 
 	return &lsuserspb.FollowUserResponse{Success: true}, nil
-}
-
-// UnfollowUser removes a user from the follow list.
-func (s *serverAPI) UnfollowUser(
-	ctx context.Context,
-	req *lsuserspb.UnfollowUserRequest,
-) (*lsuserspb.UnfollowUserResponse, error) {
-	if err := validateUnfollowUserRequest(req); err != nil {
-		return &lsuserspb.UnfollowUserResponse{Success: false}, err
-	}
-
-	err := s.users.UnfollowUser(ctx, req.GetFollowLinkId())
-	if err != nil {
-		return &lsuserspb.UnfollowUserResponse{Success: false}, response.InternalError("error unfollowing user")
-	}
-
-	return &lsuserspb.UnfollowUserResponse{Success: true}, nil
 }
 
 func validateFollowUserRequest(req *lsuserspb.FollowUserRequest) error {
@@ -239,6 +226,23 @@ func validateFollowUserRequest(req *lsuserspb.FollowUserRequest) error {
 	return nil
 }
 
+// UnfollowUser removes a user from the follow list.
+func (s *serverAPI) UnfollowUser(
+	ctx context.Context,
+	req *lsuserspb.UnfollowUserRequest,
+) (*lsuserspb.UnfollowUserResponse, error) {
+	if err := validateUnfollowUserRequest(req); err != nil {
+		return &lsuserspb.UnfollowUserResponse{Success: false}, err
+	}
+
+	err := s.unfollowUserUseCase.Execute(ctx, req.GetFollowLinkId())
+	if err != nil {
+		return &lsuserspb.UnfollowUserResponse{Success: false}, response.InternalError("error unfollowing user")
+	}
+
+	return &lsuserspb.UnfollowUserResponse{Success: true}, nil
+}
+
 func validateUnfollowUserRequest(req *lsuserspb.UnfollowUserRequest) error {
 	if req.GetFollowLinkId() == emptyValue {
 		return response.InvalidArgumentError("follow link id is empty")
@@ -246,4 +250,3 @@ func validateUnfollowUserRequest(req *lsuserspb.UnfollowUserRequest) error {
 
 	return nil
 }
-*/

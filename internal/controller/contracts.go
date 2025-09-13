@@ -28,4 +28,10 @@ type (
 		// Execute executes the use-case for following user.
 		Execute(ctx context.Context, userID int64, userIDToFollow int64) error
 	}
+
+	// Unfollow is a use-case for unfollowing users.
+	Unfollow interface {
+		// Execute executes the use-case for unfollowing user.
+		Execute(ctx context.Context, followLinkID int64) error
+	}
 )
