@@ -7,6 +7,7 @@ import (
 	lsuserspb "github.com/p1xray/love-signal-protos/gen/go/users"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"love-signal-users/internal/controller"
 	"love-signal-users/internal/controller/grpc/response"
 	"love-signal-users/internal/service"
@@ -20,6 +21,7 @@ type serverAPI struct {
 	lsuserspb.UnimplementedUsersServer
 	userDataUseCase             controller.UserData
 	userDataByExternalIDUseCase controller.UserDataByExternalID
+	followedUsersUseCase        controller.Followed
 }
 
 // RegisterUsersServer registers the implementation of the API service with the gRPC server.
@@ -27,10 +29,12 @@ func RegisterUsersServer(
 	gRPC *grpc.Server,
 	userDataUseCase controller.UserData,
 	userDataByExternalIDUseCase controller.UserDataByExternalID,
+	followedUsersUseCase controller.Followed,
 ) {
 	api := &serverAPI{
 		userDataUseCase:             userDataUseCase,
 		userDataByExternalIDUseCase: userDataByExternalIDUseCase,
+		followedUsersUseCase:        followedUsersUseCase,
 	}
 	lsuserspb.RegisterUsersServer(gRPC, api)
 }
@@ -137,8 +141,6 @@ func validateGetUserDataByExternalIdRequest(req *lsuserspb.GetUserDataByExternal
 	return nil
 }
 
-/* TODO: uncomment this after implementing use-cases
-
 // GetFollowedUsers returns a list of users that the given user is followed to.
 func (s *serverAPI) GetFollowedUsers(
 	ctx context.Context,
@@ -148,7 +150,7 @@ func (s *serverAPI) GetFollowedUsers(
 		return nil, err
 	}
 
-	followedUsers, err := s.users.FollowedUsers(ctx, req.GetUserId())
+	followedUsers, err := s.followedUsersUseCase.Execute(ctx, req.GetUserId())
 	if err != nil {
 		return nil, response.InternalError("error getting followed users")
 	}
@@ -156,15 +158,15 @@ func (s *serverAPI) GetFollowedUsers(
 	followedUsersPb := make([]*lsuserspb.FollowedUser, 0)
 	for _, fu := range followedUsers {
 		var avatarFileKeyPb *wrapperspb.StringValue
-		if fu.AvatarFileKey != nil {
-			avatarFileKeyPb = wrapperspb.String(*fu.AvatarFileKey)
+		if fu.FollowedUser.AvatarFileKey != nil {
+			avatarFileKeyPb = wrapperspb.String(*fu.FollowedUser.AvatarFileKey)
 		}
 
 		followedUserPb := &lsuserspb.FollowedUser{
-			FollowLinkId:  fu.FollowLinkID,
+			FollowLinkId:  fu.ID,
 			NumberOfLikes: fu.NumberOfLikes,
-			UserId:        fu.UserID,
-			FullName:      fu.FullName,
+			UserId:        fu.FollowedUser.ID,
+			FullName:      fu.FollowedUser.FullName,
 			AvatarFileKey: avatarFileKeyPb,
 		}
 		followedUsersPb = append(followedUsersPb, followedUserPb)
@@ -176,6 +178,16 @@ func (s *serverAPI) GetFollowedUsers(
 
 	return followedUsersResponse, nil
 }
+
+func validateFollowedUsersRequest(req *lsuserspb.GetFollowedUsersRequest) error {
+	if req.GetUserId() == emptyValue {
+		return response.InvalidArgumentError("userid is empty")
+	}
+
+	return nil
+}
+
+/* TODO: uncomment this after implementing use-cases
 
 // FollowUser adds the user with userIdToFollow to the list of followed users with userId.
 func (s *serverAPI) FollowUser(
@@ -213,14 +225,6 @@ func (s *serverAPI) UnfollowUser(
 	}
 
 	return &lsuserspb.UnfollowUserResponse{Success: true}, nil
-}
-
-func validateFollowedUsersRequest(req *lsuserspb.GetFollowedUsersRequest) error {
-	if req.GetUserId() == emptyValue {
-		return response.InvalidArgumentError("userid is empty")
-	}
-
-	return nil
 }
 
 func validateFollowUserRequest(req *lsuserspb.FollowUserRequest) error {

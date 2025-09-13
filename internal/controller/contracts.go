@@ -16,4 +16,10 @@ type (
 		// Execute executes the use-case for getting user data by external ID.
 		Execute(ctx context.Context, externalID int64) (entity.User, error)
 	}
+
+	// Followed is a use-case for getting followed users.
+	Followed interface {
+		// Execute executes the use-case for getting followed users.
+		Execute(ctx context.Context, userID int64) ([]entity.Follow, error)
+	}
 )
