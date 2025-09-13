@@ -3,8 +3,8 @@ package app
 import (
 	"log/slog"
 	grpcapp "love-signal-users/internal/app/grpc"
+	"love-signal-users/internal/infrastructure/storage/sqlite"
 	"love-signal-users/internal/service/users"
-	"love-signal-users/internal/storage/sqlite"
 )
 
 // App is an application.
