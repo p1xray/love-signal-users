@@ -1,0 +1,25 @@
+package main
+
+import (
+	"log/slog"
+	"love-signal-users/internal/app"
+	"love-signal-users/internal/config"
+	"love-signal-users/pkg/logger"
+)
+
+func main() {
+	cfg := config.MustLoad()
+
+	log := logger.SetupLogger(cfg.Env)
+
+	log.Info("starting application", slog.Any("config", cfg))
+
+	application := app.New(log, cfg)
+
+	go func() {
+		application.Start()
+	}()
+
+	application.GracefulStop()
+	log.Info("application stopped")
+}
