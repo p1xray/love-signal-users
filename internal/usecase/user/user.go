@@ -14,7 +14,7 @@ import (
 
 // Repository is a repository for user data use-case.
 type Repository interface {
-	UserData(ctx context.Context, id int64) (dto.User, error)
+	User(ctx context.Context, id int64) (dto.User, error)
 }
 
 // UseCase is a use-case for getting user data.
@@ -40,7 +40,7 @@ func (uc *UseCase) Execute(ctx context.Context, id int64) (entity.User, error) {
 		slog.Int64("user ID", id),
 	)
 
-	user, err := uc.repo.UserData(ctx, id)
+	user, err := uc.repo.User(ctx, id)
 	if err != nil {
 		if errors.Is(err, infrastructure.ErrEntityNotFound) {
 			log.Warn("user not found", sl.Err(err))

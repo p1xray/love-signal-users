@@ -22,4 +22,10 @@ type (
 		// Execute executes the use-case for getting followed users.
 		Execute(ctx context.Context, userID int64) ([]entity.Follow, error)
 	}
+
+	// Follow is a use-case for following users.
+	Follow interface {
+		// Execute executes the use-case for following user.
+		Execute(ctx context.Context, userID int64, userIDToFollow int64) error
+	}
 )

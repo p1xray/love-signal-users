@@ -14,7 +14,7 @@ import (
 
 // Repository is a repository for user data by external ID use-case.
 type Repository interface {
-	UserDataByExternalID(ctx context.Context, externalID int64) (dto.User, error)
+	UserByExternalID(ctx context.Context, externalID int64) (dto.User, error)
 }
 
 // UseCase is a use-case for getting user data by external ID.
@@ -33,14 +33,14 @@ func New(log *slog.Logger, repo Repository) *UseCase {
 
 // Execute executes the use-case for getting user data by external ID.
 func (uc *UseCase) Execute(ctx context.Context, externalID int64) (entity.User, error) {
-	const op = "usecase.user.Execute"
+	const op = "usecase.externaluser.Execute"
 
 	log := uc.log.With(
 		slog.String("op", op),
 		slog.Int64("user external ID", externalID),
 	)
 
-	user, err := uc.repo.UserDataByExternalID(ctx, externalID)
+	user, err := uc.repo.UserByExternalID(ctx, externalID)
 	if err != nil {
 		if errors.Is(err, infrastructure.ErrEntityNotFound) {
 			log.Warn("user not found", sl.Err(err))
