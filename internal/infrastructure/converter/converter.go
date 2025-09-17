@@ -1,10 +1,12 @@
 package converter
 
 import (
+	"github.com/guregu/null/v6"
 	"love-signal-users/internal/dto"
 	"love-signal-users/internal/entity"
 	"love-signal-users/internal/enum"
 	"love-signal-users/internal/infrastructure"
+	"love-signal-users/internal/infrastructure/kafka/data"
 	"love-signal-users/internal/infrastructure/storage/models"
 )
 
@@ -51,6 +53,22 @@ func ToFollowStorage(follow *entity.Follow, setters ...models.FollowOption) mode
 	}
 
 	return followStorage
+}
+
+func ToUserStorage(user data.User, setters ...models.UserOption) models.User {
+	userStorage := models.User{
+		ExternalID:    user.ID,
+		FullName:      user.FullName,
+		DateOfBirth:   null.TimeFromPtr(user.DateOfBirth),
+		Gender:        user.Gender.ToNullInt16(),
+		AvatarFileKey: null.StringFromPtr(user.AvatarFileKey),
+	}
+
+	for _, setter := range setters {
+		setter(&userStorage)
+	}
+
+	return userStorage
 }
 
 func findUserByID(users []models.User, id int64) (models.User, error) {
