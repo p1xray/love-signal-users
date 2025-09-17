@@ -3,3 +3,8 @@ storage_path: './storage/users.db'
 grpc:
   port: 6005
   timeout: 1h
+kafka:
+  address: 'localhost:29092,localhost:29093,localhost:29094'
+  register_new_user_topic:
+    group_id: 'new-user'
+    topic: 'test-register'
