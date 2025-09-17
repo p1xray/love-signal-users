@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"love-signal-users/internal/app"
 	"love-signal-users/internal/config"
@@ -17,7 +18,7 @@ func main() {
 	application := app.New(log, cfg)
 
 	go func() {
-		application.Start()
+		application.Start(context.Background())
 	}()
 
 	application.GracefulStop()
