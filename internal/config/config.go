@@ -10,9 +10,10 @@ import (
 
 // Config is the project configuration.
 type Config struct {
-	Env         string     `yaml:"env" env-default:"local"`
-	StoragePath string     `yaml:"storage_path" env-required:"true"`
-	GRPC        GRPCConfig `yaml:"grpc" env-required:"true"`
+	Env         string      `yaml:"env" env-default:"local"`
+	StoragePath string      `yaml:"storage_path" env-required:"true"`
+	GRPC        GRPCConfig  `yaml:"grpc" env-required:"true"`
+	Kafka       KafkaConfig `yaml:"kafka" env-required:"true"`
 }
 
 // GRPCConfig is the gRPC server configuration.
@@ -21,7 +22,19 @@ type GRPCConfig struct {
 	Timeout time.Duration `yaml:"timeout" env-required:"true"`
 }
 
-// MustRun loads config and panics if any error occurs.
+// KafkaConfig is the kafka configuration.
+type KafkaConfig struct {
+	Address              string                     `yaml:"address" env-required:"true"`
+	RegisterNewUserTopic RegisterNewUserTopicConfig `yaml:"register_new_user_topic" env-required:"true"`
+}
+
+// RegisterNewUserTopicConfig is the kafka topic for new registered user configuration.
+type RegisterNewUserTopicConfig struct {
+	GroupID string `yaml:"group_id" env-required:"true"`
+	Topic   string `yaml:"topic" env-required:"true"`
+}
+
+// MustLoad loads config and panics if any error occurs.
 func MustLoad() *Config {
 	path := fetchConfigPath()
 	if path == "" {
@@ -31,7 +44,7 @@ func MustLoad() *Config {
 	return MustLoadByPath(path)
 }
 
-// MustRun loads config by path and panics if any error occurs.
+// MustLoadByPath loads config by path and panics if any error occurs.
 func MustLoadByPath(configPath string) *Config {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		panic("config file does not exist: " + configPath)

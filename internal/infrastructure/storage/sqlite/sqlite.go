@@ -188,6 +188,46 @@ func (s *Storage) UserByExternalID(ctx context.Context, externalID int64) (model
 	return user, nil
 }
 
+// CreateUser creates the user in storage.
+func (s *Storage) CreateUser(ctx context.Context, user models.User) (int64, error) {
+	const op = "sqlite.CreateUser"
+
+	stmt, err := s.db.PrepareContext(ctx,
+		`insert into users (external_id, full_name, date_of_birth, gender, avatar_file_key, deleted, created_at, updated_at)
+		values (?, ?, ?, ?, ?, ?, ?, ?);`)
+
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	res, err := stmt.ExecContext(
+		ctx,
+		user.ExternalID,
+		user.FullName,
+		user.DateOfBirth,
+		user.Gender,
+		user.AvatarFileKey,
+		user.Deleted,
+		user.CreatedAt,
+		user.UpdatedAt,
+	)
+	if err != nil {
+		var sqliteErr sqlite3.Error
+		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+			return 0, fmt.Errorf("%s: %w", op, infrastructure.ErrUserExist)
+		}
+
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return id, nil
+}
+
 // FollowsByUserID returns a list of follow links that the given user is followed to from storage.
 func (s *Storage) FollowsByUserID(
 	ctx context.Context,

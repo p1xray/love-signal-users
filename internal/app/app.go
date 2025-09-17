@@ -1,9 +1,12 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	grpcapp "love-signal-users/internal/app/grpc"
+	"love-signal-users/internal/app/kafka"
 	"love-signal-users/internal/config"
+	"love-signal-users/internal/infrastructure/kafka/handlers"
 	"love-signal-users/internal/infrastructure/repository"
 	"love-signal-users/internal/infrastructure/storage/sqlite"
 	"love-signal-users/internal/usecase/externaluser"
@@ -19,8 +22,9 @@ import (
 
 // App is an application.
 type App struct {
-	log     *slog.Logger
-	grpcApp *grpcapp.App
+	log      *slog.Logger
+	grpcApp  *grpcapp.App
+	kafkaApp *kafka.App
 }
 
 // New creates a new application.
@@ -44,6 +48,9 @@ func New(
 	followUserUseCase := follow.New(log, usersRepository)
 	unfollowUserUseCase := unfollow.New(log, usersRepository)
 
+	// Handlers.
+	registerHandler := handlers.NewUserHasRegistered(log, storage)
+
 	grpcApp := grpcapp.New(
 		log,
 		cfg.GRPC.Port,
@@ -54,20 +61,24 @@ func New(
 		unfollowUserUseCase,
 	)
 
+	kafkaApp := kafka.New(log, cfg.Kafka, registerHandler)
+
 	return &App{
-		log:     log,
-		grpcApp: grpcApp,
+		log:      log,
+		grpcApp:  grpcApp,
+		kafkaApp: kafkaApp,
 	}
 }
 
 // Start - starts the application.
-func (a *App) Start() {
+func (a *App) Start(ctx context.Context) {
 	const op = "app.Start"
 
 	log := a.log.With(slog.String("op", op))
 	log.Info("starting application")
 
 	a.grpcApp.Start()
+	a.kafkaApp.Start(ctx)
 }
 
 // GracefulStop - gracefully stops the application.
@@ -89,4 +100,5 @@ func (a *App) GracefulStop() {
 	log.Info("stopping application")
 
 	a.grpcApp.Stop()
+	a.kafkaApp.Stop()
 }
