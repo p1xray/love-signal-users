@@ -8,24 +8,31 @@ import (
 
 // Consumer provides access to the kafka reader.
 type Consumer struct {
-	reader *kafka.Reader
-	output chan ReceivedMessage
-	notify chan error
+	reader           *kafka.Reader
+	output           chan ReceivedMessage
+	notify           chan error
+	autoCommitOffset bool
 }
 
 // NewConsumerGroup returns new instance of Consumer which configured as consumer group.
-func NewConsumerGroup(address []string, groupID, topic string) *Consumer {
-	r := kafka.NewReader(kafka.ReaderConfig{
+func NewConsumerGroup(address []string, groupID, topic string, setters ...ConsumerOption) *Consumer {
+	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: address,
 		GroupID: groupID,
 		Topic:   topic,
 	})
 
-	return &Consumer{
-		reader: r,
+	consumer := &Consumer{
+		reader: reader,
 		notify: make(chan error),
 		output: make(chan ReceivedMessage),
 	}
+
+	for _, setter := range setters {
+		setter(consumer)
+	}
+
+	return consumer
 }
 
 // Consume reads data from kafka.
@@ -34,16 +41,45 @@ func (c *Consumer) Consume(ctx context.Context) {
 	defer close(c.output)
 
 	for {
-		msg, err := c.reader.ReadMessage(ctx)
+		var msg kafka.Message
+		var err error
+		if c.autoCommitOffset {
+			msg, err = c.reader.ReadMessage(ctx)
+		} else {
+			msg, err = c.reader.FetchMessage(ctx)
+		}
+
 		if err != nil {
 			c.notify <- err
 		}
 
 		receivedMessage := ReceivedMessage{
-			Topic: msg.Topic,
-			Data:  msg.Value,
+			Topic:     msg.Topic,
+			Partition: msg.Partition,
+			Offset:    msg.Offset,
+			Data:      msg.Value,
 		}
 		c.output <- receivedMessage
+	}
+}
+
+// Confirm confirms that the message was processed successfully.
+func (c *Consumer) Confirm(ctx context.Context, messages ...ReceivedMessage) {
+	if c.autoCommitOffset {
+		return
+	}
+
+	kafkaMessages := make([]kafka.Message, len(messages))
+	for i, msg := range messages {
+		kafkaMessages[i] = kafka.Message{
+			Topic:     msg.Topic,
+			Partition: msg.Partition,
+			Offset:    msg.Offset,
+		}
+	}
+
+	if err := c.reader.CommitMessages(ctx, kafkaMessages...); err != nil {
+		c.notify <- err
 	}
 }
 
