@@ -29,6 +29,7 @@ func New(
 		address,
 		cfg.RegisterNewUserTopic.GroupID,
 		cfg.RegisterNewUserTopic.Topic,
+		kafka.ManuallyCommitOffset(),
 	)
 
 	return &App{
@@ -76,7 +77,7 @@ func (a *App) handleConsumerReceivedMessages(ctx context.Context) {
 	const op = "kafkaapp.handleConsumerReceivedMessages"
 
 	log := a.log.With(slog.String("op", op))
-	
+
 	for _, consumer := range a.consumers {
 		go func() {
 			for {
@@ -90,6 +91,8 @@ func (a *App) handleConsumerReceivedMessages(ctx context.Context) {
 							if err := a.userHasRegisteredHandler.Execute(ctx, msg.Data); err != nil {
 								log.Error("error handling new registered user", sl.Err(err))
 							}
+
+							consumer.Confirm(ctx, msg)
 						}()
 					default:
 						log.Warn("handler implementation for topic does not exist", slog.String("topic", msg.Topic))

@@ -1,6 +1,8 @@
 package kafka
 
 type ReceivedMessage struct {
-	Topic string
-	Data  []byte
+	Topic     string
+	Partition int
+	Offset    int64
+	Data      []byte
 }
